@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <title>useyourstori.es</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+  
+    <!-- <link rel="stylesheet" href="stylesheets/bootstrap.min.css">
+    <link rel="stylesheet" href="stylesheets/bootstrap-theme.min.css">
+    -->
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootswatch/3.2.0+1/amelia/bootstrap.min.css">
+    <link rel="stylesheet" href="/stylesheets/main.css">
+
+    <script src="/javascripts/vendor/modernizr-2.6.2-respond-1.1.0.min.js"></script>
+    
+    <script type="text/javascript" src="/javascripts/vendor/jquery-2.1.1.min.js"></script>
+    
+    <script type="text/javascript" src="/javascripts/vendor/bootstrap.min.js"></script>
+    <script src="/javascripts/vendor/lodash.js"></script>
+    
+    <!-- content_for :include_in_head -->
+    <%= yield_content :include_in_head %>
+    <!--  -->
+  </head>
+
+  <body class="<%= session[:role] %>">
+    <!-- top_nav partial -->
+    <%= erb :'/layout/top_nav' %>
+    <!-- end top_nav -->
+    <!-- body content -->
+    <%= yield %>
+    <!-- end body content -->
+    <!-- footer content -->
+    <%= erb :'/layout/footer' %>
+    <!-- end footer content -->
+  </body>
+</html>
