@@ -1,32 +1,23 @@
+<style>
+.axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+  .graph{ background-color: hsl(184, 30%, 45%);}
+  .savings-count{ display: inline-block;}
+  .savings-count span{ margin: 0px 20px; color: #BFD98D;}
+</style>
+
 <div class="container">
-	<h1>Savings Estimator</h1>
-	<div class="row story-input">
-		<div class="col-md-4">
-		  <div class="input-group">
-		    <div class="input-group-addon">$</div>
-		    <input id="m-income" class="form-control" type="text" placeholder="Monthly Income">
-		     <span class="input-group-addon">.00</span>
-		  </div>
-		</div>
-
-		<div class="col-md-4">
-		  <div class="input-group">
-		    <div class="input-group-addon">$</div>
-		    <input id="m-housing" class="form-control" type="text" placeholder="Monthly Housing">
-		     <span class="input-group-addon">.00</span>
-		  </div>
-		</div>
-
-		<div class="col-md-4">
-		  <div class="input-group">
-		    <div class="input-group-addon">$</div>
-		    <input id="m-expenses" class="form-control" type="text" placeholder="Monthly Expenses">
-		     <span class="input-group-addon">.00</span>
-		  </div>
-		</div>
-	</div><!--Inputs -->
+	
 	<div class="Row">
 		<h2>Savings over time</h2>
+		<h3 class="col-md-4 savings-count">Invested Savings: <span class='invested'></span></h3>
+		<h3 class="col-md-4 savings-count">Base Savings: <span class='base'></span></h3>
+		<h3 class="col-md-4 savings-count">
+			Invested is<span class='pct'></span> more than base.
+			</h3>
 		<div id="savings-chart"></div>
 
 	</div>
@@ -34,3 +25,21 @@
 <script src="/javascripts/savings.js"></script>
 <script src="/javascripts/savingschart.js"></script>
 </div>
+<script>
+$(function(){
+	makeAllYears( 30 );
+	graphTwenty( );	
+
+	var big = Math.round( investedSavings[359] ),
+		small = Math.round( tyCumSavings[359] ),
+		diff = Math.round( ( investedSavings[359] /  tyCumSavings[359]) * 100.00 )
+	$('.invested').text('$'+ big)
+
+	$('.base').text('$' + small );
+	$('.pct').text(diff + '%')
+
+})
+
+
+
+</script>

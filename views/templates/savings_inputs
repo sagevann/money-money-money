@@ -1,0 +1,26 @@
+<h1>Savings Estimator</h1>
+	<div class="row story-input">
+		<div class="col-md-4">
+		  <div class="input-group">
+		    <div class="input-group-addon">$</div>
+		    <input id="m-income" class="form-control" type="text" placeholder="Monthly Income">
+		     <span class="input-group-addon">.00</span>
+		  </div>
+		</div>
+
+		<div class="col-md-4">
+		  <div class="input-group">
+		    <div class="input-group-addon">$</div>
+		    <input id="m-housing" class="form-control" type="text" placeholder="Monthly Housing">
+		     <span class="input-group-addon">.00</span>
+		  </div>
+		</div>
+
+		<div class="col-md-4">
+		  <div class="input-group">
+		    <div class="input-group-addon">$</div>
+		    <input id="m-expenses" class="form-control" type="text" placeholder="Monthly Expenses">
+		     <span class="input-group-addon">.00</span>
+		  </div>
+		</div>
+	</div><!--Inputs -->
