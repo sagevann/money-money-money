@@ -1,3 +1,5 @@
+
+
 <style>
 .axis path, .axis line {
     fill: none;
@@ -10,9 +12,28 @@
 </style>
 
 <div class="container">
-	
-	<div class="Row">
 		<h2>Savings over time</h2>
+	
+	<div class="row">
+		
+		
+		<div class="col-md-2">
+			<div class="input-group">
+			  <input id="yrs" type="number" class="form-control" placeholder="30">
+			  <span class="input-group-addon">YRS</span>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<div class="input-group">
+			  <input id="pct" type="number" class="form-control" placeholder="8">
+			  <span class="input-group-addon">%</span>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<button  id="update" class="btn btn-success">Update Chart</button>
+		</div>
+	</div>
+	<div class="row">
 		<h3 class="col-md-4 savings-count">Invested Savings: <span class='invested'></span></h3>
 		<h3 class="col-md-4 savings-count">Base Savings: <span class='base'></span></h3>
 		<h3 class="col-md-4 savings-count">
@@ -22,21 +43,41 @@
 
 	</div>
 <script src="/javascripts/vendor/d3.js/d3.min.js"></script>
+<script src="/javascripts/vendor/numeral/numeral.min.js"></script>
 <script src="/javascripts/savings.js"></script>
 <script src="/javascripts/savingschart.js"></script>
 </div>
 <script>
+
+function f$( a ){
+	return numeral(a).format('$ 0,0')
+}
+function fpct( a ){
+	return numeral(a).format('0%')
+}
+function updateLabels(  ){
+
+	var end = investedSavings.length - 1,
+		big =  f$( investedSavings[end] )
+		small = f$( tyCumSavings[end] )
+		diff = fpct( investedSavings[end] /  tyCumSavings[end]) 
+	
+	
+	$('.invested').text(big );
+	$('.base').text(small );
+	$('.pct').text(diff )
+}
+
+function updateSimulation( years, apr ){
+	setupGraph( years, apr )
+	updateLabels()
+}
 $(function(){
-	makeAllYears( 30 );
-	graphTwenty( );	
-
-	var big = Math.round( investedSavings[359] ),
-		small = Math.round( tyCumSavings[359] ),
-		diff = Math.round( ( investedSavings[359] /  tyCumSavings[359]) * 100.00 )
-	$('.invested').text('$'+ big)
-
-	$('.base').text('$' + small );
-	$('.pct').text(diff + '%')
+	
+	updateSimulation( 30, 0.08 )
+	$('#update').click(function(e){ 
+		updateSimulation( $('#yrs').val(), $('#pct').val() / 100.0)
+	})
 
 })
 

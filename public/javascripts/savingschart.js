@@ -73,12 +73,12 @@ function compoundSavings( cf, apr ){
 	return savings.map( function(x){ return Math.round( x, 0)})
 }
 
-function makeAllYears( years ){
-	var apr = arguments[1] ? arguments[1] : 0.08
+function makeAllYears( years, apr ){
+	 apr = apr ? apr : 0.08
 
-    tyIncome = overYears( mintIncome, years, .08),
-	tyExpenses = overYears( mintExpenses, years, .05),
-	tySavings = overYears( mintSavings, years, 0.02),
+    tyIncome = overYears( mintIncome, years),
+	tyExpenses = overYears( mintExpenses, years),
+	tySavings = overYears( mintSavings, years),
 	tyCumSavings = runningTotal( tySavings ),
 	investedSavings = compoundSavings( tySavings, apr)
 }
@@ -109,12 +109,12 @@ function getMinOfArray(numArray) {
 function updateScale(dataset){
 	console.log('scales')
 	var max = getMaxOfArray( dataset ),
-		min = getMinOfArray( dataset )
+		min = getMinOfArray( cumSavings )
 
 	console.log(max +', ' + min)
 	scale = d3.scale.linear()
-					.domain([min, max ])
-					.range([5, 650])
+					.domain([min, max])
+					.range([5, 500])
 	return scale
 }
 
@@ -151,24 +151,24 @@ function makeBarGraph( dataset, klass, color, wid ){
 	.attr('class', 'stuff')
 	.attr('class', klass)
 	.attr('x',function(d,i){ return i * (dw+1)})
-	.attr('y',function(d){ return  h - scale(d) })
+	.attr('y',function(d){ return  h - scale(d); })
 	.attr('width', dw - barpadding - wid)
 	.attr('height', function(d){ return scale(d);})
 	.attr('fill', color)
 
 }
 
-function makeAxis( ){
-
+function makeAxis( years ){
+	svg.selectAll('.tick').remove()
 	var margin = {top: 10, right: 30, bottom: 30, left: 30},
     width = w - margin.left - margin.right,
     height = 500 
  
 var x = d3.scale.linear()
-    .domain([0, 30])
+    .domain([0, years])
     .range([0, w]);
  
-var data = Array.apply(null, {length: 30}).map(Number.call, Number)
+var data = Array.apply(null, {length: years}).map(Number.call, Number)
 
 
 var xAxis = d3.svg.axis()
@@ -188,10 +188,10 @@ var xAxis = d3.svg.axis()
 
 function setupGraph( years, apr ){
 	makeAllYears( years, apr )
-	graphTwenty()
+	graphTwenty( years )
 }
 
-function graphTwenty(){
+function graphTwenty( years){
 	svg.selectAll('rect').remove()
 	updateScale(investedSavings)
 	//updateScale(tyCumSavings)
@@ -201,7 +201,7 @@ function graphTwenty(){
 	makeBarGraph(tyExpenses, 'c', '#E89797')
 	makeBarGraph(tySavings, 'd', '#729134')
 
- 	makeAxis( )
+ 	makeAxis(years )
 
 }
 
