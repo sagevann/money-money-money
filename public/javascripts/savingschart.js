@@ -155,7 +155,7 @@ function setBasis( arr ){
 var tip = d3.tip().attr('class', 'd3-tip')
   .offset([-10, 0])
   .html(function(d) {
-    return "<span style='color:red'>" + d + "</span>";
+    return "<span style='color:white'>" + numeral(d).format('$0,0') + "</span>";
   })
 
 svg.call(tip)
