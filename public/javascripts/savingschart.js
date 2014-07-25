@@ -42,7 +42,7 @@ function overYears(values, years, up ){
 
 	return arr
 }
-
+var rawSavings = 1000;
 var mintSavings = mintIncome.map( function(inc,i){ return inc - mintExpenses[i]})
 var cumSavings = runningTotal(mintSavings),
 	cumIncome = runningTotal(mintIncome)
@@ -52,7 +52,9 @@ var tyIncome,
 	tyExpenses,
 	tySavings,
 	tyCumSavings,
-	investedSavings
+	investedSavings,
+	tyRawSavings,
+	tyRawInvestedSavings
 
 function compoundSavings( cf, apr ){
 	var savings = [], 
@@ -73,14 +75,19 @@ function compoundSavings( cf, apr ){
 	return savings.map( function(x){ return Math.round( x, 0)})
 }
 
-function makeAllYears( years, apr ){
+function makeAllYears( years, apr, savings){
 	 apr = apr ? apr : 0.08
+	rawSavings = savings ? savings : rawSavings;
 
-    tyIncome = overYears( mintIncome, years),
-	tyExpenses = overYears( mintExpenses, years),
-	tySavings = overYears( mintSavings, years),
-	tyCumSavings = runningTotal( tySavings ),
+    tyIncome = overYears( mintIncome, years)
+	tyExpenses = overYears( mintExpenses, years)
+	tySavings = overYears( mintSavings, years)
+	tyCumSavings = runningTotal( tySavings )
 	investedSavings = compoundSavings( tySavings, apr)
+
+	var tempRaw =  Array.apply(null, new Array( years * 12 )).map(Number.prototype.valueOf,rawSavings)
+	tyRawSavings =  runningTotal(tempRaw);
+	tyRawInvestedSavings = compoundSavings( tempRaw, apr )
 }
 
 function runningTotal( arr ){
@@ -97,6 +104,7 @@ var vpW = $('.container').width(),
 	w = vpW > 1140 ? vpW: 1140;
 var h = 500;
 var barpadding = 0;
+var margins = { top: 5, bottom: 20, right: 20, left: 20}
 
 function getMaxOfArray(numArray) {
     return Math.max.apply(null, numArray);
@@ -106,10 +114,10 @@ function getMinOfArray(numArray) {
     return Math.min.apply(null, numArray);
 }
 
-function updateScale(dataset){
+function updateScale(maxdata, mindata){
 	console.log('scales')
-	var max = getMaxOfArray( dataset ),
-		min = getMinOfArray( cumSavings )
+	var max = getMaxOfArray( maxdata ),
+		min = getMinOfArray( mindata )
 
 	console.log(max +', ' + min)
 	scale = d3.scale.linear()
@@ -118,6 +126,14 @@ function updateScale(dataset){
 	return scale
 }
 
+function updateScaleByValue(max, min){
+	
+
+	scale = d3.scale.linear()
+					.domain([min, max])
+					.range([1, 500])
+	return scale
+}
 var scale 
 
 var svg = d3.select('#savings-chart')
@@ -128,15 +144,99 @@ var svg = d3.select('#savings-chart')
 
 var dataset = savings.values
 var l = savings.values.length
-var dw = (w / l) - ( barpadding)
+var dw = Math.round( (w / l) - ( barpadding))
 
 function setBasis( arr ){
 
 	l = arr.length
-	dw = (w/l) - barpadding
+	dw = (w/l) - 1
 }
 
+var tip = d3.tip().attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "<span style='color:red'>" + d + "</span>";
+  })
 
+svg.call(tip)
+
+function makeBarGraphs( income, expenses, savings ){
+	var cumulative = runningTotal( savings ),
+		bigarray = income.concat( expenses ),
+		baseline = expenses.max
+		maxincome = [ income.max, cumulative.max ].max
+		minmin = [income.min, expenses.min].min
+		fullmax = maxincome + baseline
+		
+
+	updateScaleByValue( fullmax, minmin )
+	
+	setBasis(income)
+	svg.selectAll('rect').remove()
+
+	svg.selectAll('cumulative')
+	.data(cumulative)
+	.enter()
+	.append('rect')
+	.attr('class', 'stuff')
+	.attr('class', 'income')
+	.attr('x',function(d,i){ return i * (dw+1)})
+	.attr('y',function(d,i){ return  h - scale(baseline) - scale(d)})
+	.attr('width', dw)
+	.attr('height', function(d){ return scale(d);})
+	.attr('fill', '#7B9F35')
+	.style('opacity', 0.8)
+	.on('mouseover', tip.show)
+      .on('mouseout', tip.hide)
+
+	svg.selectAll('income')
+	.data(income)
+	.enter()
+	.append('rect')
+	.attr('class', 'stuff')
+	.attr('class', 'income')
+	.attr('x',function(d,i){ return i * (dw+1)})
+	.attr('y',function(d,i){ return  h - scale(d) - scale(baseline) })
+	.attr('width', dw - barpadding)
+	.attr('height', function(d){ console.log( d + ', ' + scale(d));return scale(d);})
+	.attr('fill', '#354F00')
+	.style('opacity', '0.3')
+	.on('mouseover', tip.show)
+      .on('mouseout', tip.hide)
+
+
+	svg.selectAll('expenses')
+	.data(expenses)
+	.enter()
+	.append('rect')
+	.attr('class', 'stuff')
+	.attr('class', 'income')
+	.attr('x',function(d,i){ return i * (dw+1)})
+	.attr('y',function(d,i){ return  h - scale(baseline) })
+	.attr('width', dw - barpadding)
+	.attr('height', function(d){ return scale(d);})
+	.attr('fill', 'red')
+	.on('mouseover', tip.show)
+     .on('mouseout', tip.hide)
+
+	svg.selectAll('savings')
+	.data(savings)
+	.enter()
+	.append('rect')
+	.attr('class', 'stuff')
+	.attr('class', 'income')
+	.attr('x',function(d,i){ return i * (dw+1)})
+	.attr('y',function(d,i){ return  h - scale(baseline) - scale(d)})
+	.attr('width', dw)
+	.attr('height', function(d){ return scale(d);})
+	.attr('fill', '#7B9F35')
+	.on('mouseover', tip.show)
+      .on('mouseout', tip.hide)
+
+    
+      
+      
+}
 
 
 function makeBarGraph( dataset, klass, color, wid ){
@@ -186,15 +286,31 @@ var xAxis = d3.svg.axis()
  
 }
 
-function setupGraph( years, apr ){
-	makeAllYears( years, apr )
+function setupGraph( years, apr, savings ){
+	makeAllYears( years, apr, savings )
 	graphTwenty( years )
 }
 
+Object.defineProperties( Array.prototype, { last: { get: function(){ return this.slice(-1)[0] } } } )
+Object.defineProperties( Array.prototype, { max: { get: function(){ return Math.max.apply(null, this)} } } )
+Object.defineProperties( Array.prototype, { min: { get: function(){ return Math.min.apply(null, this)} } } )
+
 function graphTwenty( years){
+
+	var max = Math.max( investedSavings.last,
+						tyCumSavings.last, 
+						tyRawSavings.last, 
+						tyRawInvestedSavings.last)
+	
+	var min = 
+
+	setBasis( years * 12)
 	svg.selectAll('rect').remove()
-	updateScale(investedSavings)
+	updateScale([max], tySavings )
 	//updateScale(tyCumSavings)
+
+	//makeBarGraph(tyRawSavings, 'trs', '#729134')
+	makeBarGraph(tyRawInvestedSavings, 'tris', '#729134')
 	makeBarGraph(investedSavings, 'x', '#BFD98D')
 	makeBarGraph(tyCumSavings, 'a', '#92B056')
 	makeBarGraph(tyIncome, 'b', '#377171')

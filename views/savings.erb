@@ -9,6 +9,35 @@
   .graph{ background-color: hsl(184, 30%, 45%);}
   .savings-count{ display: inline-block;}
   .savings-count span{ margin: 0px 20px; color: #BFD98D;}
+
+  .d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
 </style>
 
 <div class="container">
@@ -29,6 +58,15 @@
 			  <span class="input-group-addon">%</span>
 			</div>
 		</div>
+
+		<div class="col-md-3">
+			<div class="input-group">
+				<span class="input-group-addon">$</span>
+			  <input id="monthly" type="number" class="form-control" placeholder="8000">
+			  <span class="input-group-addon">/month</span>
+			</div>
+		</div>
+
 		<div class="col-md-2">
 			<button  id="update" class="btn btn-success">Update Chart</button>
 		</div>
@@ -39,10 +77,20 @@
 		<h3 class="col-md-4 savings-count">
 			Invested is<span class='pct'></span> more than base.
 			</h3>
+	</div>
+	<div class="row">
+		<h3 class="col-md-4 savings-count">Invested Goal Savings: <span class='goal-invested'></span></h3>
+		<h3 class="col-md-4 savings-count">Base Goal Savings: <span class='goal-base'></span></h3>
+		<h3 class="col-md-4 savings-count">
+			Invested is<span class='goal-pct'></span> more than base.
+			</h3>
+	</div>
 		<div id="savings-chart"></div>
 
 	</div>
+	
 <script src="/javascripts/vendor/d3.js/d3.min.js"></script>
+<script src="/javascripts/vendor/d3.js/d3.tip.js"></script>
 <script src="/javascripts/vendor/numeral/numeral.min.js"></script>
 <script src="/javascripts/savings.js"></script>
 <script src="/javascripts/savingschart.js"></script>
@@ -58,25 +106,33 @@ function fpct( a ){
 function updateLabels(  ){
 
 	var end = investedSavings.length - 1,
-		big =  f$( investedSavings[end] )
-		small = f$( tyCumSavings[end] )
-		diff = fpct( investedSavings[end] /  tyCumSavings[end]) 
-	
+		big =  f$( investedSavings[end] ),
+		small = f$( tyCumSavings[end] ),
+		diff = fpct( investedSavings[end] /  tyCumSavings[end]),
+		goalBig = f$( tyRawInvestedSavings.last),
+		goal = f$( tyRawSavings.last),
+		gDiff = fpct( tyRawInvestedSavings.last / tyRawSavings.last)
+		
 	
 	$('.invested').text(big );
 	$('.base').text(small );
 	$('.pct').text(diff )
+	$('.goal-invested').text(goalBig );
+	$('.goal-base').text(goal );
+	$('.goal-pct').text(gDiff)
 }
 
-function updateSimulation( years, apr ){
-	setupGraph( years, apr )
+function updateSimulation( years, apr, savings ){
+	setupGraph( years, apr, savings)
 	updateLabels()
 }
 $(function(){
 	
 	updateSimulation( 30, 0.08 )
 	$('#update').click(function(e){ 
-		updateSimulation( $('#yrs').val(), $('#pct').val() / 100.0)
+		updateSimulation( $('#yrs').val() * 1.0, 
+						  $('#pct').val() / 100.0,
+			 			  $('#monthly').val() * 1.0 )
 	})
 
 })
