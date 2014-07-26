@@ -251,10 +251,12 @@ function makeBarGraph( dataset, klass, color, wid ){
 	.attr('class', 'stuff')
 	.attr('class', klass)
 	.attr('x',function(d,i){ return i * (dw+1)})
-	.attr('y',function(d){ return  h - scale(d); })
+	.attr('y', 500)
 	.attr('width', dw - barpadding - wid)
 	.attr('height', function(d){ return scale(d);})
 	.attr('fill', color)
+	.transition().duration(1500).ease('back-out')
+	.attr('y',function(d){ return  h - scale(d); })
 
 }
 
