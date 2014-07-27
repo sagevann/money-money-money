@@ -21,6 +21,7 @@ var mintIncome = [	 2090,4050,3986,12812,4230,3946,
 					 3891,6193,5326,21150,12717,9995
 ]
 
+
 function compound( principal, apr, periods ){
 	var periodic_apr = 1.0 + apr / periods
 
@@ -28,7 +29,66 @@ function compound( principal, apr, periods ){
 }
 
 
+function sd(x) {
+  var n = x.length, variance = 1
+  if (n < 1) return NaN;
+  if (n === 1) return 0;
+  var mean = d3.mean(x),
+      i = -1,
+      s = 0;
+  while (++i < n) {
+    var v = x[i] - mean;
+    s += v * v;
+  }
+  variance = s / (n - 1);
 
+  return Math.pow( variance, 0.5 )
+};
+
+function makeRnorm( values ){
+	var m = d3.mean(values),
+		s = sd(values)
+
+	return d3.random.normal(m,s)
+}
+
+function randomYears( input, years ){
+
+	var i = 0, v =[],
+		generator = makeRnorm( input )
+
+	for(i; i < years * 12; i++){
+		var g = generator()
+		v.push( Math.abs(g) )
+	}
+
+	return v
+}
+
+var rIncome = [], 
+	rExpenses = [],
+	rSavings = []
+
+function randomFromMint(years){
+	var a = { income:  randomYears( mintIncome, years),
+			  expenses: randomYears( mintExpenses, years)
+			 }
+		a.savings = a.income.map(function(b,i){ return b - a.expenses[i]})
+
+	return a;
+}
+
+function randomMintGraphs( years, invest){
+	var m = randomFromMint( years)
+		
+	if( invest !== false ){
+		invest = 'invest'
+	}
+
+
+	makeBarGraphs( m.income, m.expenses, m.savings, invest )
+
+}
 function overYears(values, years, up ){
 
 	up = up ? up : 0;
@@ -100,12 +160,13 @@ function runningTotal( arr ){
 }
 
 
-var vpW = $('.container').width(),
+var vpW = $('.container-fluid').width(),
 	w = vpW > 1140 ? vpW: 1140;
+
 var h = 500;
 var barpadding = 0;
 var margins = { top: 5, bottom: 20, right: 20, left: 20}
-
+	w -= margins.right
 function getMaxOfArray(numArray) {
     return Math.max.apply(null, numArray);
 }
@@ -115,11 +176,11 @@ function getMinOfArray(numArray) {
 }
 
 function updateScale(maxdata, mindata){
-	console.log('scales')
+	//console.log('scales')
 	var max = getMaxOfArray( maxdata ),
 		min = getMinOfArray( mindata )
 
-	console.log(max +', ' + min)
+	//console.log(max +', ' + min)
 	scale = d3.scale.linear()
 					.domain([min, max])
 					.range([5, 500])
@@ -136,12 +197,20 @@ function updateScaleByValue(max, min){
 }
 var scale 
 
+/*
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+*/
 var svg = d3.select('#savings-chart')
 			.append('svg')
 			.attr('width', w)
 			.attr('height',h)
-			.attr('class', 'graph');
-
+			
+			.attr('class', 'graph')
+			
 var dataset = savings.values
 var l = savings.values.length
 var dw = Math.round( (w / l) - ( barpadding))
@@ -155,7 +224,7 @@ function setBasis( arr ){
 var tip = d3.tip().attr('class', 'd3-tip')
   .offset([-10, 0])
   .html(function(d) {
-    return "<span style='color:white'>" + numeral(d).format('$0,0') + "</span>";
+    return "<span style='color:white'>"+ numeral(d).format('$0,0') + "</span>";
   })
 
 svg.call(tip)
@@ -163,31 +232,76 @@ svg.call(tip)
 function makeBarGraphs( income, expenses, savings ){
 	var cumulative = runningTotal( savings ),
 		bigarray = income.concat( expenses ),
-		baseline = expenses.max
-		maxincome = [ income.max, cumulative.max ].max
-		minmin = [income.min, expenses.min].min
-		fullmax = maxincome + baseline
-		
-
-	updateScaleByValue( fullmax, minmin )
+		baseline = expenses.max,
+		maxincome = [ income.max, cumulative.max ].max,
+		minmin = [income.min, expenses.min].min,
+		fullmax = maxincome + baseline,
+		c = []
 	
-	setBasis(income)
-	svg.selectAll('rect').remove()
+setBasis(income)
+svg.selectAll('rect').remove()
+	if( arguments[3] === 'invest'){
+	 	console.log('invested')
+	 	c = compoundSavings( savings, 0.08)
+	 	updateScaleByValue( c.max, minmin )
+		 
 
+	 	svg.selectAll('invested')
+			.data(c)
+			.enter()
+			.append('rect')
+			.attr('class', 'stuff')
+			.attr('class', 'invested')
+			.attr('x',function(d,i){ return i * (dw+1)})
+			.attr('y',function(d,i){ return  h - scale(baseline)})
+			.attr('width', dw)
+			.attr('height', 0)
+			.attr('fill', 'purple')
+			.style('opacity', 0.8)
+			.on('mouseover', tip.html(function(d){return '<span>Invested</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
+			.on('mouseover', tip.show)
+		    .on('mouseout', tip.hide)
+			.transition()
+				.delay(function(d,i){ return 1800 + i * 5})
+				.duration(1000)
+				.ease('back-out')
+			.attr('y',function(d,i){ return  h - scale(baseline) - scale(d)})
+			.attr('height', function(d){ return scale(d);})
+	 
+	}else{ 
+		updateScaleByValue( fullmax, minmin ) 
+	}
+	
+	
+	
+
+	
 	svg.selectAll('cumulative')
 	.data(cumulative)
 	.enter()
 	.append('rect')
 	.attr('class', 'stuff')
-	.attr('class', 'income')
+	.attr('class', 'cumulative')
 	.attr('x',function(d,i){ return i * (dw+1)})
-	.attr('y',function(d,i){ return  h - scale(baseline) - scale(d)})
+	.attr('y',function(d,i){ return  h - scale(baseline)})
 	.attr('width', dw)
-	.attr('height', function(d){ return scale(d);})
+	.attr('height', 0)
 	.attr('fill', '#7B9F35')
 	.style('opacity', 0.8)
+	.on('mouseover', tip.html(function(d){return '<span>Cum Savings</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
+			
 	.on('mouseover', tip.show)
-      .on('mouseout', tip.hide)
+    .on('mouseout', tip.hide)
+	.transition()
+		.delay(function(d,i){ return 1520 + i * 5})
+		.duration(1000)
+		.ease('back-out')
+	.attr('y',function(d,i){ return  h - scale(baseline) - scale(d)})
+	.attr('height', function(d){ return scale(d);})
+	
+	
+	
+
 
 	svg.selectAll('income')
 	.data(income)
@@ -198,9 +312,11 @@ function makeBarGraphs( income, expenses, savings ){
 	.attr('x',function(d,i){ return i * (dw+1)})
 	.attr('y',function(d,i){ return  h - scale(d) - scale(baseline) })
 	.attr('width', dw - barpadding)
-	.attr('height', function(d){ console.log( d + ', ' + scale(d));return scale(d);})
+	.attr('height', function(d){ console.log( this); return scale(d);})
 	.attr('fill', '#354F00')
-	.style('opacity', '0.3')
+	.style('opacity', '0.8')
+	.on('mouseover', tip.html(function(d){return '<span>Income</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
+			
 	.on('mouseover', tip.show)
       .on('mouseout', tip.hide)
 
@@ -210,31 +326,41 @@ function makeBarGraphs( income, expenses, savings ){
 	.enter()
 	.append('rect')
 	.attr('class', 'stuff')
-	.attr('class', 'income')
+	.attr('class', 'expenses')
 	.attr('x',function(d,i){ return i * (dw+1)})
-	.attr('y',function(d,i){ return  h - scale(baseline) })
+	.attr('y',function(d,i){ return  h - scale(d) -scale(baseline) })
 	.attr('width', dw - barpadding)
 	.attr('height', function(d){ return scale(d);})
 	.attr('fill', 'red')
+	.style('opacity', 0.5)
+	.on('mouseover', tip.html(function(d){return '<span>Expenses</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
+			
 	.on('mouseover', tip.show)
-     .on('mouseout', tip.hide)
+    .on('mouseout', tip.hide)
 
-	svg.selectAll('savings')
-	.data(savings)
-	.enter()
-	.append('rect')
-	.attr('class', 'stuff')
-	.attr('class', 'income')
-	.attr('x',function(d,i){ return i * (dw+1)})
-	.attr('y',function(d,i){ return  h - scale(baseline) - scale(d)})
-	.attr('width', dw)
-	.attr('height', function(d){ return scale(d);})
-	.attr('fill', '#7B9F35')
-	.on('mouseover', tip.show)
-      .on('mouseout', tip.hide)
 
-    
-      
+
+
+	svg.selectAll('.expenses')
+	.data(expenses)
+	.transition().duration(1500).ease('back-out') 
+	.attr("transform", function(d){ return "translate(0,"+ scale(d)+")" })
+	function incomeScale(d,i){
+		var move = scale(d)
+		if( income[i] < d){
+			move = scale(d) -  scale( d - income[i]) + 2
+		}
+		return 'translate(0,' + move +')'
+
+	}
+
+	svg.selectAll('.income')	
+	.data(expenses)
+	.transition().duration(1500).ease('back-out') 
+	.attr("transform", function(d,i){ return incomeScale(d,i) })
+	  
+
+	 
       
 }
 
@@ -257,6 +383,7 @@ function makeBarGraph( dataset, klass, color, wid ){
 	.attr('fill', color)
 	.transition().duration(1500).ease('back-out')
 	.attr('y',function(d){ return  h - scale(d); })
+	.attr("transform", "translate(" + margins.left + "," + margins.top + ")");
 
 }
 
@@ -290,7 +417,7 @@ var xAxis = d3.svg.axis()
 
 function setupGraph( years, apr, savings ){
 	makeAllYears( years, apr, savings )
-	graphTwenty( years )
+	makeBarGraphs( tyIncome,tyExpenses, tySavings)
 }
 
 Object.defineProperties( Array.prototype, { last: { get: function(){ return this.slice(-1)[0] } } } )
@@ -337,7 +464,7 @@ function graphMint(){
 
 function updateSavingsGraph(){
 	dataset = savings.values
-	console.log('values ' + savings.values)
+	//console.log('values ' + savings.values)
 	updateScale(income.values)
 
 	

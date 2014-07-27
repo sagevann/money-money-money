@@ -40,7 +40,7 @@
 }
 </style>
 
-<div class="container">
+<div class="container-fluid">
 		<h2>Savings over time</h2>
 	
 	<div class="row">
@@ -85,7 +85,8 @@
 			Invested is<span class='goal-pct'></span> more than base.
 			</h3>
 	</div>
-		<div id="savings-chart"></div>
+	
+	<div id="savings-chart" class="row-fluid"></div>
 
 	</div>
 	
@@ -128,7 +129,7 @@ function updateSimulation( years, apr, savings ){
 }
 $(function(){
 	
-	updateSimulation( 30, 0.08 )
+	updateSimulation( 10, 0.08 )
 	$('#update').click(function(e){ 
 		updateSimulation( $('#yrs').val() * 1.0, 
 						  $('#pct').val() / 100.0,
