@@ -1,4 +1,4 @@
-var mintExpenses = [ 467, 5755, 5379, 3432, 8023, 5013,
+var mintExpenses0 = [ 467, 5755, 5379, 3432, 8023, 5013,
 					 4234, 2922, 2952, 2649, 2346, 3274,
 					 
 					 4084, 2687, 7026, 2571, 4966, 5253, 
@@ -9,7 +9,7 @@ var mintExpenses = [ 467, 5755, 5379, 3432, 8023, 5013,
 					 
 					 7951, 7420, 8428, 17749, 6778, 4267]
 
-var mintIncome = [	 2090,4050,3986,12812,4230,3946,
+var mintIncomeOld= [	 2090,4050,3986,12812,4230,3946,
 					 9166,6034,4546,6938,431,63,
 
 					 26,6096,10321,202,140,3378,
@@ -21,6 +21,8 @@ var mintIncome = [	 2090,4050,3986,12812,4230,3946,
 					 3891,6193,5326,21150,12717,9995
 ]
 
+var mintIncome = [12811.89, 4230.22, 3931.80, 9166.50, 6033.65, 4546.02, 6938.41, 6096.16, 10321.02, 3377.54, 5718.03, 6413.12, 3862.87, 3410.32, 9196.66, 25833.85, 18851.94, 38987.00, 30475.56, 4725.66, 10673.62, 6105.52, 1124.40, 11748.22, 8302.32, 7182.95, 16024.20, 3890.71, 5887.67, 5325.65, 21149.34, 12589.97, 13780.97, 18940.41 ]
+var mintExpenses = [5352.88, 3431.86, 8022.97, 4998.71, 4233.98, 2922.49, 2951.60, 2649.15, 2345.70, 3274.09, 4058.73, 2686.81, 9005.72, 2570.76, 4846.87, 5252.93, 9526.73, 6170.92, 8558.66, 12823.73,6429.63, 11950.61, 13868.34,10619.37,11374.72,11943.35,9535.41, 12655.09,8756.46, 9365.86, 12537.45,11452.04,9567.09, 8455.03, 7771.48, 7114.28, 8428.48, 17748.37,6650.58, 6722.91, 4937.41]
 
 function compound( principal, apr, periods ){
 	var periodic_apr = 1.0 + apr / periods
@@ -69,9 +71,14 @@ var rIncome = [],
 	rExpenses = [],
 	rSavings = []
 
+function makeMinExpenses( expenses, min ){
+
+	return expenses.map( function(a){ return a > min ? a : min })
+}
+
 function randomFromMint(years){
-	var a = { income:  randomYears( mintIncome, years),
-			  expenses: randomYears( mintExpenses, years)
+	var a = { income:   randomYears( mintIncome, years),
+			  expenses: makeMinExpenses( randomYears( mintExpenses, years), d3.min( mintExpenses )  )
 			 }
 		a.savings = a.income.map(function(b,i){ return b - a.expenses[i]})
 
@@ -312,7 +319,7 @@ svg.selectAll('rect').remove()
 	.attr('x',function(d,i){ return i * (dw+1)})
 	.attr('y',function(d,i){ return  h - scale(d) - scale(baseline) })
 	.attr('width', dw - barpadding)
-	.attr('height', function(d){ console.log( this); return scale(d);})
+	.attr('height', function(d){ return scale(d);})
 	.attr('fill', '#354F00')
 	.style('opacity', '0.8')
 	.on('mouseover', tip.html(function(d){return '<span>Income</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
