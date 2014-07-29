@@ -1,0 +1,94 @@
+<style>
+.btn-file {
+  position: relative;
+  overflow: hidden;
+}
+.btn-file input[type=file] {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 100%;
+  min-height: 100%;
+  font-size: 999px;
+  text-align: right;
+  filter: alpha(opacity=0);
+  opacity: 0;
+  background: red;
+  cursor: inherit;
+  display: block;
+}
+input[readonly] {
+  background-color: white !important;
+  cursor: text !important;
+}
+
+</style>
+
+  <div class="col-md-5">
+    <h3>Select CSV to load from</h3>
+    <div class="input-group">
+        <span class="input-group-btn">
+            <span class="btn btn-primary btn-file">
+                Browse&hellip; <input id="csv-file" type="file" multiple>
+            </span>
+        </span>
+        <input type="text" class="form-control" readonly>
+    </div>
+    <span class="help-block">
+        CSV files only please.
+    </span>
+  </div>
+
+<script>
+var loaded_file
+
+$(function(){
+  
+  $(document).on('change', '.btn-file :file', function() {
+    var input = $(this),
+        numFiles = input.get(0).files ? input.get(0).files.length : 1,
+        label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+    
+    console.log(input.get(0).files)
+    input.trigger('fileselect', [numFiles, label]);
+  });
+
+
+  $('.btn-file :file').on('fileselect', function(event, numFiles, label) {
+      console.log('fileselect')
+      var input = $(this).parents('.input-group').find(':text'),
+          log = numFiles > 1 ? numFiles + ' files selected' : label;
+      
+      if( input.length ) {
+        console.log('log')
+          input.val(log);
+      }
+
+      console.log(numFiles)
+      
+  });
+
+  function completeFn(results)
+  {
+    
+    if (results && results.errors)
+    {
+      if (results.errors)
+      {
+        errorCount = results.errors.length;
+        firstError = results.errors[0];
+      }
+      if (results.data && results.data.length > 0)
+        rowCount = results.data.length;
+    }
+
+    console.log("    Results:", results);
+
+    // icky hack
+    loaded_file = results
+  }
+
+
+})//
+</script>
+
