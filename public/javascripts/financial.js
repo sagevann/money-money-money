@@ -100,7 +100,7 @@ function monthlyRandomValuesOverYears( seed, years ){
 
 function simulateCashFlowOverYears( seedIncome, seedExpenses, years){
 	
-	var a = { income:   monthlyRandomValuesOverYears( seedIncome, years),
+	var a = { income:   applyValueFloor( monthlyRandomValuesOverYears( seedIncome, years), 0 ),
 			  expenses: applyValueFloor( monthlyRandomValuesOverYears( seedExpenses, years), d3.min( seedExpenses )  )
 			 }
 		a.savings = a.income.map(function(b,i){ return b - a.expenses[i]})

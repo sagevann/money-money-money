@@ -1,44 +1,65 @@
+
+var config = generateOptions( 1140, 500, 5, 20, 20, 20, 0)
 //set up graph basics 
-var barpadding = 0,
-	margins = { top: 5, bottom: 20, right: 20, left: 20},
-	h = 500,
-	vpW = $('.container-fluid').width(),
-	w = vpW > 1140 ? vpW: 1140,
-	l = 0,
-	dw = 0,
-	scale
+//var barpadding = 0,
+//	margins = { top: 5, bottom: 20, right: 20, left: 20},
+//	h = 500,
+//	vpW = $('.container-fluid').width(),
+//	w = vpW > 1140 ? vpW: 1140,
+//	l = 0,
+//	dw = 0,
+
+var	scale,
+	monthlyScale
 	
-	w -= margins.right
+//	w -= margins.right
 
 //the svg element to graph on
+function createChartArea( selector, width, height, klass ){
+
+	klass = klass ? klass : 'chartArea'
+
+	return d3.select(selector)
+			 .append('svg')
+			 .attr('width', width)
+			 .attr('height', height)
+			 .attr('class', klass )
+
+}
+
+//this could be more abstracted but works for now
+function createBarTooltip( klass, title ){
+
+	var fc = function(d) { return "<span style='color:white'>" + numeral(d).format('$0,0') + "</span>"; }
+    			
+	return d3.tip()
+			 .attr('class', klass)
+  			 .offset([-10, 0])
+  			 .html( fc )
+}
+
+var svg = createChartArea( '#savings-chart', config.width, config.height, 'graph')
+/*
 var svg = d3.select('#savings-chart')
 			.append('svg')
-			.attr('width', w)
-			.attr('height',h)
+			.attr('width', config.width)
+			.attr('height',config.height)
 			.attr('class', 'graph')
-		
+*/
+
 //setup d3 tool tip
-var tip = d3.tip().attr('class', 'd3-tip')
-  .offset([-10, 0])
-  .html(function(d) {
-    return "<span style='color:white'>"+ numeral(d).format('$0,0') + "</span>";
-  })
+var tip = createBarTooltip( 'i-tip')
+
 svg.call(tip)
 
 
-function setBasis( arr ){
-	console.log('basis')
-	l = arr.length
-	dw = (w/l) - 1
-}
-
 
 function graphSimulatedYears( income, expenses, years, apr){
-	console.log( income[3])
+	
 	var m = simulateCashFlowOverYears(income, expenses, years)
 	
 	apr = apr < 1 ? apr : apr / 100.0; 
-	makeBarGraphs( m.income, m.expenses, m.savings, apr )
+	return makeBarGraphs( m.income, m.expenses, m.savings, apr )
 
 }
 
@@ -59,6 +80,13 @@ function updateScaleByValue(max, min){
 	return scale
 }
 
+function updateMonthlyScaleByValue( max, min ){
+	monthlyScale = d3.scale.linear()
+					.domain([min, max])
+					.range([1, 250])
+	return monthlyScale
+}
+
 
 function makeBarGraphs( income, expenses, savings, apr ){
 	console.log( 'makeBarGraphs')
@@ -69,40 +97,71 @@ function makeBarGraphs( income, expenses, savings, apr ){
 		minmin = [income.min, expenses.min].min,
 		fullmax = maxincome + baseline,
 		fv = []
-		//console.log(savings)
-
-		console.log( 'makeBarGraphs bl ' + baseline)
+		
+	updateMonthlyScaleByValue( income.max, income.min )
 	
 	svg.selectAll('rect').remove()
 	
-	setBasis(income)
+	config.configureBars(income)
+
  	fv = compoundSavings( savings, apr)
- 	console.log( 'makeBarGraphs ' + fv[3])
+ 	//console.log( 'makeBarGraphs ' + fv[3])
  	
  	updateScaleByValue( fv.max, minmin )
-	 
+	
+ 
+
+ 	function graphBar( target, klass, dataset, config, tooltip ){
+ 		var t = target.selectAll(klass)
+                  .data(dataset).enter()
+          				.append('rect')
+          				.attr('class', klass)
+          				.attr('x',function(d,i){ return i * (config.bars.width + 1)})
+          				.attr('y',function(d,i){ return  config.height })
+          				.attr('width', config.bars.width)
+          				.attr('height', 0)
+          				.attr('fill', 'purple')
+          				.style('opacity', 0.8)
+
+    if( tooltip ){
+      t.on('mouseover', tooltip.show)
+       .on('mouseout', tooltip.hide)
+    }
+        
+          	t.transition()
+          	   .delay(function(d,i){ return 1800 + i * 5})
+          	   .duration(1000)
+          	   .ease('back-out')
+          	   .attr('y',function(d,i){ return  config.height - scale(d)})
+               .attr('height', function(d){ return scale(d);})
+    return t;
+
+ 	}
+
+    graphBar( svg, 'invested', fv, config, tip )
+  /*
+
+
  	svg.selectAll('invested')
-		.data(fv)
-		.enter()
+		.data(fv).enter()
 		.append('rect')
 		.attr('class', 'stuff')
 		.attr('class', 'invested')
-		.attr('x',function(d,i){ return i * (dw+1)})
-		.attr('y',function(d,i){ return  h - scale(baseline)})
-		.attr('width', dw)
+		.attr('x',function(d,i){ return i * (config.bars.width + 1)})
+		.attr('y',function(d,i){ return  config.height })
+		.attr('width', config.bars.width)
 		.attr('height', 0)
 		.attr('fill', 'purple')
 		.style('opacity', 0.8)
-		.on('mouseover', tip.html(function(d){return '<span>Invested</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
 		.on('mouseover', tip.show)
 	    .on('mouseout', tip.hide)
 		.transition()
 			.delay(function(d,i){ return 1800 + i * 5})
 			.duration(1000)
 			.ease('back-out')
-		.attr('y',function(d,i){ return  h - scale(baseline) - scale(d)})
+		.attr('y',function(d,i){ return  config.height - scale(d)})
 		.attr('height', function(d){ return scale(d);})
- 
+ /*
 	
 	svg.selectAll('cumulative')
 	.data(cumulative)
@@ -111,7 +170,7 @@ function makeBarGraphs( income, expenses, savings, apr ){
 	.attr('class', 'stuff')
 	.attr('class', 'cumulative')
 	.attr('x',function(d,i){ return i * (dw+1)})
-	.attr('y',function(d,i){ return  h - scale(baseline)})
+	.attr('y',function(d,i){ return  h })
 	.attr('width', dw)
 	.attr('height', 0)
 	.attr('fill', '#7B9F35')
@@ -124,10 +183,11 @@ function makeBarGraphs( income, expenses, savings, apr ){
 		.delay(function(d,i){ return 1520 + i * 5})
 		.duration(1000)
 		.ease('back-out')
-	.attr('y',function(d,i){ return  h - scale(baseline) - scale(d)})
+	.attr('y',function(d,i){ return  h - scale(d)})
 	.attr('height', function(d){ return scale(d);})
 	
-
+	var oldScale = scale
+	scale = monthlyScale
 	svg.selectAll('income')
 	.data(income)
 	.enter()
@@ -158,9 +218,10 @@ function makeBarGraphs( income, expenses, savings, apr ){
 	.attr('height', function(d){ return scale(d);})
 	.attr('fill', 'red')
 	.style('opacity', 0.5)
-	.on('mouseover', tip.html(function(d){return '<span>Expenses</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
-	.on('mouseover', tip.show)
-    .on('mouseout', tip.hide)
+	
+	//.on('mouseover', tip.html(function(d){return '<span>Expenses</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
+	//.on('mouseover', tip.show)
+    //.on('mouseout', tip.hide)
 
 	svg.selectAll('.expenses')
 	.data(expenses)
@@ -180,6 +241,9 @@ function makeBarGraphs( income, expenses, savings, apr ){
 	.transition().duration(1500).ease('back-out') 
 	.attr("transform", function(d,i){ return incomeScale(d,i) })
 	  
+	 scale = oldScale
+*/
+	 return [ income, expenses, savings, fv]
 }
 
 
