@@ -25,7 +25,7 @@ function generateOptions( width, height, top, right, bottom, left, pad  ){
 
 	options.configureBars = function( dataArray ){
 			this.bars.count = dataArray.length
-			this.bars.width = (this.width / this.bars.count )
+			this.bars.width = ( this.width / this.bars.count ) - this.bars.pad
 		}
 
 	return options;

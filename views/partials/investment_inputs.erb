@@ -1,0 +1,42 @@
+
+	<div class="row">
+		<div class="col-md-2">
+			<div class="input-group">
+			  <input id="yrs" type="number" class="form-control" placeholder="30">
+			  <span class="input-group-addon">YRS</span>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<div class="input-group">
+			  <input id="pct" type="number" class="form-control" placeholder="8">
+			  <span class="input-group-addon">%</span>
+			</div>
+		</div>
+
+		<div class="col-md-3">
+			<div class="input-group">
+				<span class="input-group-addon">$</span>
+			  <input id="monthly" type="number" class="form-control" placeholder="8000">
+			  <span class="input-group-addon">/month</span>
+			</div>
+		</div>
+
+		<div class="col-md-2">
+			<button  id="update" class="btn btn-success">Update Chart</button>
+		</div>
+	</div>
+
+	<div class="row">
+		<h3 class="col-md-4 savings-count">Invested Savings: <span class='invested'></span></h3>
+		<h3 class="col-md-4 savings-count">Base Savings: <span class='base'></span></h3>
+		<h3 class="col-md-4 savings-count">
+			Invested is<span class='pct'></span> more than base.
+			</h3>
+	</div>
+	<div class="row">
+		<h3 class="col-md-4 savings-count">Invested Goal Savings: <span class='goal-invested'></span></h3>
+		<h3 class="col-md-4 savings-count">Base Goal Savings: <span class='goal-base'></span></h3>
+		<h3 class="col-md-4 savings-count">
+			Invested is<span class='goal-pct'></span> more than base.
+			</h3>
+	</div>

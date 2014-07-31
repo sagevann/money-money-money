@@ -1,5 +1,5 @@
 
-var config = generateOptions( 1140, 500, 5, 20, 20, 20, 0)
+var config = generateOptions( 1140, 500, 5, 20, 20, 20, 1)
 //set up graph basics 
 //var barpadding = 0,
 //	margins = { top: 5, bottom: 20, right: 20, left: 20},
@@ -101,93 +101,240 @@ function makeBarGraphs( income, expenses, savings, apr ){
 	updateMonthlyScaleByValue( income.max, income.min )
 	
 	svg.selectAll('rect').remove()
-	
+	console.log('dw ' + config.bars.width )
 	config.configureBars(income)
+
+  console.log('dw1 ' + config.bars.width )
 
  	fv = compoundSavings( savings, apr)
  	//console.log( 'makeBarGraphs ' + fv[3])
  	
  	updateScaleByValue( fv.max, minmin )
 	
+  function addAttr( selection, attr ){
+        selection.attr(  attr.k,  attr.v)
+   }
  
+  function addAttrs( selection, attrs){
+      for( var i =0; i < attrs.length; i++){
+        addAttr( selection, attrs[i])
+      }
+  }
 
- 	function graphBar( target, klass, dataset, config, tooltip ){
- 		var t = target.selectAll(klass)
-                  .data(dataset).enter()
-          				.append('rect')
-          				.attr('class', klass)
-          				.attr('x',function(d,i){ return i * (config.bars.width + 1)})
-          				.attr('y',function(d,i){ return  config.height })
-          				.attr('width', config.bars.width)
-          				.attr('height', 0)
-          				.attr('fill', 'purple')
-          				.style('opacity', 0.8)
+  function addStyle( selection, style ){
+        selection.style(  style.k,  style.v)
+   }
+ 
+  function addStyles( selection, styles){
+      for( var i =0; i < styles.length; i++){
+         addStyle( selection, styles[i])
+      }
+  }
 
-    if( tooltip ){
-      t.on('mouseover', tooltip.show)
-       .on('mouseout', tooltip.hide)
+  function bindTip( selection, tip){
+      selection.on('mouseover', tip.show)
+               .on('mouseout', tip.hide)
+  }
+
+  function addTransition( selection, delayF, dur, ease, attrs ){
+
+    var s = selection.transition()
+                     .delay( delayF)
+                     .duration(dur)
+                     .ease(ease)
+
+        addAttrs( s, attrs )
+    return s;
+  }
+
+ function addAreaTransition( selection, delayF, dur, ease, y1 ){
+    var s = addTransition( selection, delayF, dur, ease, [])
+    s.y1(y1.v)
+
+ }
+
+  var transitions = {}
+  transitions.invested = function( selection, dur ){
+       addTransition( selection, 
+                    function(d,i){ return 1800 + i * 5}, 
+                    dur, 
+                    'back-out', 
+                    [ {k: 'y', v: function(d,i){ return  config.height - scale(d); } }, 
+                      {k: 'height', v: function(d){ return scale(d) > 0 ? scale(d) : 0; } }
+                    ])
     }
-        
-          	t.transition()
-          	   .delay(function(d,i){ return 1800 + i * 5})
-          	   .duration(1000)
-          	   .ease('back-out')
-          	   .attr('y',function(d,i){ return  config.height - scale(d)})
-               .attr('height', function(d){ return scale(d);})
-    return t;
 
+    transitions.saved = function( selection, dur ){
+       addTransition( selection, 
+                    function(d,i){ return 1520 + i * 5}, 
+                    dur, 
+                    'back-out', 
+                    [ {k: 'y', v: function(d,i){ return  config.height - scale(d); } }, 
+                      {k: 'height', v: function(d){ return scale(d) > 0 ? scale(d) : 0; } }
+                    ])
+    }
+   
+   transitions.general = function( selection, dur ){
+       addTransition( selection, 
+                    function(d,i){ return 100}, 
+                    dur, 
+                    'ease-out', 
+                    [ {k: 'y', v: function(d,i){ return  config.height - scale(d) - scale(baseline); } }, 
+                      {k: 'height', v: function(d){ return scale(d) > 0 ? scale(d) : 0; } }
+                    ])
+   }
+
+/*
+svg.selectAll('income')
+  .data(income)
+  .enter()
+  .append('rect')
+  .attr('class', 'stuff')
+  .attr('class', 'income')
+  .attr('x',function(d,i){ return i * (dw+1)})
+  .attr('y',function(d,i){ return  h - scale(d) - scale(baseline) })
+  .attr('width', dw - barpadding)
+  .attr('height', function(d){ return scale(d);})
+  .attr('fill', '#354F00')
+  .style('opacity', '0.8')
+  .on('mouseover', tip.html(function(d){return '<span>Income</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
+      
+  .on('mouseover', tip.show)
+      .on('mouseout', tip.hide)
+*/
+
+function areaTransition(area) {
+  d3.selectAll("path")
+    .transition()
+      .duration(2500)
+      .attr("d", area);
+}
+
+function areaChart( target, data ){
+
+  target.selectAll('path').remove()
+  var x = d3.time.scale()
+    .domain( [0, data.length])
+    .range([0, config.width]);
+
+  var area = d3.svg.area()
+               .x(function(d,i) { return x(i); })
+               .y0(config.height)  
+               .y1(function(d){ return config.height - scale(d)})
+
+/*
+var area = d3.svg.area()
+      .x(function(d) { return x(d.d); })
+      .y0(h)
+      .y1(function(d) { return y(d.x); });
+ 
+  var path = vis.append("svg:path")
+      .data([data])
+      .attr("d", area);
+
+Then when you want to update the area, you can say:
+
+  path.data([newData]).transition().attr("d", area);
+
+If you like, you can also avoid the data bind and pass the data
+directly to the area generator:
+
+  path.transition().attr("d", area(newData));
+
+*/
+
+var foo = []
+for( var i = 0; i < data.length; i++ ){ foo.push(0)}
+  var t = target.append("path")
+             .datum(foo)
+             .attr('d', area)
+  
+  t.transition().delay(500).duration(1500).attr('d', area(data))
+
+console.log('area')
+
+
+  //t.call( transitions.invested, 1000)
+//[ {k: 'y', v: function(d,i){ return  config.height - scale(d) - scale(baseline); } }, 
+ //                     {k: 'height', v: function(d){ return scale(d); } }
+ //                   ]
+}
+
+function monthlyBarGraph( target, klass, dataset, config, attr, styles, transition, tooltip ){
+
+    var t = target
+              .selectAll(klass)
+              .data(dataset).enter()
+              .append('rect')
+              .attr('class', klass)
+              .attr('x',function(d,i){ return i * (config.bars.width + config.bars.pad)})
+              .attr('y',function(d,i){ return  config.height - scale(baseline) })
+              .attr('width', config.bars.width)
+              .attr('height', 0 );
+
+    if( attr )
+      addAttrs( t, attr)
+
+    if( styles)
+      addStyles(t, styles)
+                
+    if( tooltip )
+      bindTip( t, tooltip)
+    
+    //console.log( transition !== '' + ' t')
+    if( transition !== ''){ 
+    //  t.call( transitions[transition], 1000 )
+    }else{
+      t.call( transitions.general, 300)
+    }  
+    return t;
+  }
+
+
+ 	function cumulativeBarGraph( target, klass, dataset, config, attr, styles, transition, tooltip ){
+ 		var t = target
+              .selectAll(klass)
+              .data(dataset).enter()
+      				.append('rect')
+      				.attr('class', klass)
+      				.attr('x',function(d,i){ return i * (config.bars.width + config.bars.pad)})
+      				.attr('y',function(d,i){ return config.height })
+      				.attr('width', config.bars.width)
+      				.attr('height', 0)
+
+    if( attr )
+      addAttrs( t, attr)
+
+    if( styles)
+      addStyles(t, styles)
+          			
+    if( tooltip )
+      bindTip( t, tooltip)
+    
+    //console.log( transition !== '' + ' t')
+    if( transition !== ''){ 
+      t.call( transitions[transition], 1000 )
+    }else{
+      t.call( transitions.general, 1000)
+    }  
+    return t;
  	}
 
-    graphBar( svg, 'invested', fv, config, tip )
+
+//areaChart( svg, fv)
+ 
+ cumulativeBarGraph( svg, 'invested', fv, config, [{ k: 'fill', v: 'purple'}], [{ k: 'opacity', v: 0.8}], 'invested', tip )
+ cumulativeBarGraph( svg, 'cumulative', cumulative, config, [{ k: 'fill', v: '#7B9F35'}], [{ k: 'opacity', v: 0.9}], 'saved', tip)
+ monthlyBarGraph( svg, 'income', income, config, [{ k: 'fill', v: '#354F00'}], [{ k: 'opacity', v: 0.8}], '', tip)
+monthlyBarGraph( svg, 'expenses', expenses, config, [{ k: 'fill', v: '#F00'}], [{ k: 'opacity', v: 0.8}], '', tip)
+ 
   /*
 
-
- 	svg.selectAll('invested')
-		.data(fv).enter()
-		.append('rect')
-		.attr('class', 'stuff')
-		.attr('class', 'invested')
-		.attr('x',function(d,i){ return i * (config.bars.width + 1)})
-		.attr('y',function(d,i){ return  config.height })
-		.attr('width', config.bars.width)
-		.attr('height', 0)
-		.attr('fill', 'purple')
-		.style('opacity', 0.8)
-		.on('mouseover', tip.show)
-	    .on('mouseout', tip.hide)
-		.transition()
-			.delay(function(d,i){ return 1800 + i * 5})
-			.duration(1000)
-			.ease('back-out')
-		.attr('y',function(d,i){ return  config.height - scale(d)})
-		.attr('height', function(d){ return scale(d);})
- /*
-	
-	svg.selectAll('cumulative')
-	.data(cumulative)
-	.enter()
-	.append('rect')
-	.attr('class', 'stuff')
-	.attr('class', 'cumulative')
-	.attr('x',function(d,i){ return i * (dw+1)})
-	.attr('y',function(d,i){ return  h })
-	.attr('width', dw)
-	.attr('height', 0)
-	.attr('fill', '#7B9F35')
-	.style('opacity', 0.8)
-	.on('mouseover', tip.html(function(d){return '<span>Cum Savings</span><br><span>' + numeral(d).format('$0,0') +'</span>'}))
-			
-	.on('mouseover', tip.show)
-    .on('mouseout', tip.hide)
-	.transition()
-		.delay(function(d,i){ return 1520 + i * 5})
-		.duration(1000)
-		.ease('back-out')
-	.attr('y',function(d,i){ return  h - scale(d)})
-	.attr('height', function(d){ return scale(d);})
+ 
 	
 	var oldScale = scale
 	scale = monthlyScale
+
 	svg.selectAll('income')
 	.data(income)
 	.enter()
