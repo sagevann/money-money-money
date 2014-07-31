@@ -21,7 +21,7 @@ function compoundSavings( cf, apr ){
 			fv[i] = fv[i -1] + cf[i]
 		}
 
-		console.log(fv[i])
+		//console.log(fv[i])
 	}
 
 	return fv.map( function(x){ return Math.round( x, 0)})

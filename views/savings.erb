@@ -58,7 +58,7 @@
       <% [2,1,0].map{ |b| Time.now.year - b }.each_with_index do |yr,i| %>
       <div class="input-group stacked-input">
         <span class="input-group-addon">$</span>
-        <input id="salary-<%= i %>" type="number" class="form-control" placeholder="30">
+        <input id="salary-<%= i %>" type="number" class="form-control salary" placeholder="30">
         <span class="input-group-addon"><%= yr %></span>
       </div>
         <% end %>
@@ -70,7 +70,7 @@
       <% [2,1,0].each_with_index do |i| %>
       <div class="input-group stacked-input">
         <span class="input-group-addon">$</span>
-        <input id="expenses-<%= i %>" type="number" class="form-control" placeholder="30">
+        <input id="expenses-<%= i %>" type="number" class="form-control expenses" placeholder="30">
         <span class="input-group-addon"><%= (Time.new( 2014, Time.now.month - i)).strftime('%B') %></span>
       </div>
       <% end %>
@@ -82,14 +82,14 @@
       
           <div class="input-group stacked-input">
             <span class="input-group-addon">$</span>
-            <input id="housing" type="number" class="form-control" placeholder="8000">
+            <input id="housing" type="number" class="form-control other" placeholder="8000">
             <span class="input-group-addon">Housing</span>
           </div>
             <p class="help-block">Monthly rent or mortgage.</p>
         
           <div class="input-group">
           <span class="input-group-addon">$</span>
-          <input id="other-fixed" type="number" class="form-control" placeholder="8000">
+          <input id="other-fixed" type="number" class="form-control other" placeholder="8000">
           <span class="input-group-addon">Other</span>
         </div>
           <p class="help-block">Amount spent monthly on loans, insurace, etc.</p>
@@ -97,10 +97,10 @@
       
     <div class="col-md-3">
       <table>
-        <tr><td></td><td>Monthly Average</td></tr>
-        <tr><td>Income</td><td class="avg-income">0</td></tr>
-        <tr><td>Expenses</td><td class="avg-expenses">0</td></tr>
-        <tr><td>Savings</td><td class="avg-savings">0</td></tr>
+        <tr><td></td><td>Monthly</td><td>Yearly</td></tr>
+        <tr><td>Income</td><td class="m-income">0</td><td class="y-income">0</td></tr>
+        <tr><td>Expenses</td><td class="m-expenses">0</td><td class="y-expenses">0</td></tr>
+        <tr><td>Savings</td><td class="m-savings">0</td><td class="y-savings">0</td></tr>
       </table>
     </div>
   </div>
@@ -181,9 +181,117 @@ function seedDataFromMint( mint ){
 	return seed
 }
 
+//cashflow is per month
+//yearlyCashflow is per year
+
+function monthlyIncome(salary){
+  return salary / 12.0;
+}
+
+function CashFlow( ){
+
+  var income = 0
+  var salaries = [0]
+
+  var expenses = []
+    
+    this.housing = 0
+    this.other = 0
+
+
+    this.__defineSetter__("salary", function(val){
+        income = val / 12;
+    });
+
+    this.__defineGetter__("salary", function(){
+        return income * 12;
+    });
+
+     this.__defineGetter__("income", function(){
+        return income;
+    });
+
+    this.__defineGetter__("avgExpenses", function(){
+        if( expenses.length < 1) return 0;
+
+      return expenses.avg
+    });
+
+    this.__defineGetter__("yearlyExpenses", function(){
+        if( expenses.length < 1) return 0
+
+      return expenses.avg * 12
+    });
+
+    this.__defineGetter__("allExpenses", function(){
+        return expenses;
+    });
+
+    this.__defineGetter__("yearlySavings", function(){
+        if( expenses.length < 1) return this.salary
+
+      return this.salary - this.yearlyExpenses
+    });
+
+    this.__defineGetter__("avgSavings", function(){
+        if( expenses.length < 1) return income
+
+      return income - this.avgExpenses
+    });
+
+    this.addExpense = function(val){ expenses.push(val) };
+
+    this.addExpenses = function(val){ expenses = expenses.concat( val ) };
+  
+
+
+}
+
+Object.defineProperties( Array.prototype, 
+      { sum: { get: function(){ return this.reduce(function(a,b){ return +a + +b})}},
+        avg: { get: function(){ return this.sum / this.length }}
+      }
+  )
+
+
+function dataAdded(e){
+
+    console.log( e + ', ' + $(this).val())
+
+}
+
+var cf = new CashFlow( )
+
+function updateSalary( e ){
+  cf.salary = $(e).val()
+  $(document).trigger('cashflow-change')
+}
+
+function updateExpenses( e ){
+  cf.addExpense( $(e).val() )
+  $(document).trigger('cashflow-change')
+}
+
+function updateTable( ){
+  console.log('hi')
+  $('.m-income').text( f$(cf.income) )
+  $('.y-income').text( f$(cf.salary) )
+
+  $('.m-expenses').text( f$(cf.avgExpenses) )
+  $('.y-expenses').text( f$(cf.yearlyExpenses) )
+
+  $('.m-savings').text(f$(cf.avgSavings))
+  $('.y-savings').text(f$(cf.yearlySavings))
+}
+
 $(function(){
-	graphSimulatedYears( mintIncome, mintExpenses, 10, 0.08)
+
+  $(document).on('cashflow-change', updateTable )
+	//graphSimulatedYears( mintIncome, mintExpenses, 10, 0.08)
 	//simulateMintYears( 10, 0.08 )
+  $('.salary').on('change', function(e){ updateSalary(this) } )
+  $('.expenses').on('change', function(e){ updateExpenses(this) })
+  //, .other').on('change', dataAdded)
 
 	$('#update').click(function(e){ 
 		updateSimulation( $('#yrs').val() * 1.0, 
@@ -200,7 +308,5 @@ $(function(){
   } );
 
 })
-
-
 
 </script>
